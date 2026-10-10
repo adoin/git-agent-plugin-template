@@ -1,74 +1,334 @@
 {
-  "id": "example",
-  "name": "Plugin example",
+  "id": "github",
+  "name": "GitHub",
   "version": "0.1.0",
   "api_version": 1,
   "library": {
-    "windows": "git_agent_plugin_example.dll",
-    "linux": "libgit_agent_plugin_example.so",
-    "macos": "libgit_agent_plugin_example.dylib"
+    "windows": "git_agent_plugin_github.dll",
+    "macos": "libgit_agent_plugin_github.dylib",
+    "linux": "libgit_agent_plugin_github.so"
   },
   "drivers": [
-    "basic.v1"
+    "basic.v1",
+    "code.v1",
+    "diff.v1"
   ],
-  "capabilities": [],
+  "capabilities": [
+    "network",
+    "ai",
+    "remote.write"
+  ],
   "events": [
-    "repository.remote_sync.started"
+    "repository.remote_sync.started",
+    "repository.activated",
+    "repository.sync"
   ],
-  "action_permissions": {
-    "increment": "store.access.increment"
-  },
-  "locales": {
-    "zh": "locales/zh.json",
-    "en": "locales/en.json"
+  "badge_labels": {
+    "key": "ui.pending_prs"
   },
   "contributes": {
-    "icons": [
-      "assets/counter.svg"
-    ],
-    "pages": [
-      {
-        "id": "home",
-        "title": {
-          "key": "home"
-        },
-        "toolbar_label": {
-          "key": "short_name"
-        },
-        "toolbar_icon": "assets/counter.svg",
-        "entry_action": "open",
-        "badge": true
-      },
-      {
-        "id": "preferences",
-        "parent": "home",
-        "title": {
-          "key": "preferences"
-        },
-        "entry_action": "open"
-      }
-    ],
     "toolbar": {
+      "icon": "assets/more.svg",
       "pages": [
-        "home",
-        "preferences"
+        "releases",
+        "repository"
       ],
       "inline_pages": [
-        "home"
+        "prs",
+        "issues",
+        "actions"
       ]
     },
+    "pages": [
+      {
+        "id": "prs",
+        "title": {
+          "key": "ui.pull_requests"
+        },
+        "entry_action": "refresh",
+        "badge": true,
+        "toolbar_label": {
+          "key": "ui.prs"
+        },
+        "toolbar_icon": "assets/pull-request.svg"
+      },
+      {
+        "id": "pr_detail",
+        "title": {
+          "key": "ui.pr_details"
+        },
+        "entry_action": "view",
+        "badge": false,
+        "toolbar_icon": "assets/pull-request.svg",
+        "parent": "prs"
+      },
+      {
+        "id": "pr_create",
+        "title": {
+          "key": "ui.create_pr"
+        },
+        "entry_action": "open",
+        "badge": false,
+        "toolbar_icon": "assets/pull-request.svg",
+        "parent": "prs",
+        "permission": "store.access.create"
+      },
+      {
+        "id": "pr_review",
+        "title": {
+          "key": "ui.review_pr"
+        },
+        "entry_action": "open",
+        "badge": false,
+        "toolbar_icon": "assets/pull-request.svg",
+        "parent": "prs"
+      },
+      {
+        "id": "issues",
+        "title": {
+          "key": "ui.issues_2"
+        },
+        "entry_action": "refresh",
+        "badge": false,
+        "toolbar_icon": "assets/issues.svg"
+      },
+      {
+        "id": "issue_detail",
+        "title": {
+          "key": "ui.issue_details"
+        },
+        "entry_action": "issue_view",
+        "badge": false,
+        "toolbar_icon": "assets/issues.svg",
+        "parent": "issues"
+      },
+      {
+        "id": "issue_create",
+        "title": {
+          "key": "ui.create_issue"
+        },
+        "entry_action": "open",
+        "badge": false,
+        "toolbar_icon": "assets/issues.svg",
+        "parent": "issues",
+        "permission": "store.access.issue_create"
+      },
+      {
+        "id": "actions",
+        "title": {
+          "key": "ui.actions"
+        },
+        "entry_action": "refresh",
+        "badge": false,
+        "toolbar_icon": "assets/actions.svg"
+      },
+      {
+        "id": "run_detail",
+        "title": {
+          "key": "ui.run_details"
+        },
+        "entry_action": "run_view",
+        "badge": false,
+        "toolbar_icon": "assets/actions.svg",
+        "parent": "actions"
+      },
+      {
+        "id": "releases",
+        "title": {
+          "key": "ui.releases"
+        },
+        "entry_action": "refresh",
+        "badge": false,
+        "toolbar_icon": "assets/releases.svg"
+      },
+      {
+        "id": "repository",
+        "title": {
+          "key": "ui.repository_overview"
+        },
+        "entry_action": "refresh",
+        "badge": false,
+        "toolbar_icon": "assets/repository.svg"
+      },
+      {
+        "id": "workflows",
+        "title": {
+          "key": "ui.workflow_definitions"
+        },
+        "entry_action": "refresh",
+        "toolbar_icon": "assets/actions.svg",
+        "parent": "actions"
+      },
+      {
+        "id": "workflow_dispatch",
+        "title": {
+          "key": "ui.dispatch_workflow"
+        },
+        "entry_action": "open",
+        "toolbar_icon": "assets/actions.svg",
+        "parent": "workflows",
+        "permission": "store.access.workflow_run"
+      }
+    ],
     "commands": [
       {
-        "id": "show_example",
+        "id": "prs",
         "title": {
-          "key": "home"
+          "key": "ui.pull_requests_2"
         },
-        "page": "home",
+        "page": "prs",
+        "action": "open",
+        "menus": [
+          "repository",
+          "view"
+        ]
+      },
+      {
+        "id": "pr_create",
+        "title": {
+          "key": "ui.create_pr"
+        },
+        "page": "pr_create",
+        "action": "open",
+        "menus": [
+          "repository",
+          "actions"
+        ],
+        "permission": "store.access.create"
+      },
+      {
+        "id": "current_pr",
+        "title": {
+          "key": "ui.current_branch_pr"
+        },
+        "page": "pr_detail",
+        "action": "current_pr",
+        "menus": [
+          "actions"
+        ]
+      },
+      {
+        "id": "pr_review",
+        "title": {
+          "key": "ui.review_pr"
+        },
+        "page": "pr_review",
+        "action": "open",
+        "menus": [
+          "actions"
+        ]
+      },
+      {
+        "id": "issues",
+        "title": {
+          "key": "ui.issues"
+        },
+        "page": "issues",
+        "action": "open",
+        "menus": [
+          "repository",
+          "view"
+        ]
+      },
+      {
+        "id": "issue_create",
+        "title": {
+          "key": "ui.create_issue"
+        },
+        "page": "issue_create",
+        "action": "open",
+        "menus": [
+          "actions"
+        ],
+        "permission": "store.access.issue_create"
+      },
+      {
+        "id": "actions",
+        "title": {
+          "key": "ui.actions_2"
+        },
+        "page": "actions",
+        "action": "open",
+        "menus": [
+          "repository",
+          "tools",
+          "view"
+        ]
+      },
+      {
+        "id": "releases",
+        "title": {
+          "key": "ui.releases_2"
+        },
+        "page": "releases",
+        "action": "open",
+        "menus": [
+          "repository",
+          "tools"
+        ]
+      },
+      {
+        "id": "repository",
+        "title": {
+          "key": "ui.repository_overview"
+        },
+        "page": "repository",
+        "action": "open",
+        "menus": [
+          "repository"
+        ]
+      },
+      {
+        "id": "workflow_definitions",
+        "title": {
+          "key": "ui.workflow_definitions"
+        },
+        "page": "workflows",
         "action": "open",
         "menus": [
           "tools"
         ]
       }
+    ],
+    "repository_tab_badge": {
+      "icon": "assets/star.svg",
+      "label": {
+        "key": "ui.stars"
+      }
+    },
+    "icons": [
+      "assets/draft.svg",
+      "assets/open-prs.svg"
     ]
-  }
+  },
+  "locales": {
+    "zh": "locales/zh.json",
+    "en": "locales/en.json"
+  },
+  "repository_match": {
+    "remote_hosts": [
+      "github.com"
+    ],
+    "host_env": "GH_HOST"
+  },
+  "action_permissions": {
+    "create": "store.access.create",
+    "merge": "store.access.merge",
+    "close": "store.access.close",
+    "reopen": "store.access.reopen",
+    "ready": "store.access.update",
+    "draft": "store.access.update",
+    "publish_review": "store.access.review",
+    "issue_create": "store.access.issue_create",
+    "issue_comment": "store.access.issue_comment",
+    "issue_edit": "store.access.issue_update",
+    "issue_close": "store.access.issue_close",
+    "issue_reopen": "store.access.issue_reopen",
+    "workflow_run": "store.access.workflow_run",
+    "run_rerun": "store.access.run_rerun",
+    "run_cancel": "store.access.run_cancel"
+  },
+  "required_tools": [
+    "gh"
+  ]
 }

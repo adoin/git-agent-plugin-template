@@ -1,0 +1,13 @@
+[package]
+name = "git-agent-plugin-example"
+version = "0.1.0"
+edition = "2024"
+license-file = "LICENSE"
+
+[lib]
+name = "git_agent_plugin_example"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+git-agent-plugin-sdk = { path = "../../vendor/git-agent-plugin-sdk", version = "=0.1.0" }
+serde_json = "1"

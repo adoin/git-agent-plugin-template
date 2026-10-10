@@ -1,0 +1,18 @@
+{
+  "home": "Plugin example",
+  "short_name": "Example",
+  "preferences": "Example preferences",
+  "back": "Back to example",
+  "counter": "Counter",
+  "name": "Display name",
+  "access": "Demo access",
+  "allowed": "Allow actions",
+  "readonly": "Read-only",
+  "save": "Save",
+  "session_hint": "Example inputs and permission store last for this app session. Host plugin switches persist across restarts.",
+  "greeting": "Hello,",
+  "sync_count": "Sync participation count",
+  "increment": "Increment",
+  "access_hint": "Change demo access in preferences to see visibility and dispatch permissions change together.",
+  "saved": "Example preferences saved."
+}

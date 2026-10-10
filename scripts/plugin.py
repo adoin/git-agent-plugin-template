@@ -11,6 +11,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+PROJECT = ROOT
 
 
 def run(args, **kwargs):
@@ -24,7 +25,7 @@ def host_target():
 
 
 def manifest():
-    return json.loads((ROOT / "plugin.json").read_text(encoding="utf-8"))
+    return json.loads((PROJECT / "plugin.json").read_text(encoding="utf-8"))
 
 
 def platform(target):
@@ -38,13 +39,13 @@ def platform(target):
 
 
 def files(data, library):
-    result = {"plugin.json": ROOT / "plugin.json", data["library"][platform(library[0])]: library[1], "LICENSE": ROOT / "LICENSE"}
-    for item in (ROOT / "assets").rglob("*"):
+    result = {"plugin.json": PROJECT / "plugin.json", data["library"][platform(library[0])]: library[1], "LICENSE": ROOT / "LICENSE"}
+    for item in (PROJECT / "assets").rglob("*"):
         if item.is_file():
-            result[item.relative_to(ROOT).as_posix()] = item
+            result[item.relative_to(PROJECT).as_posix()] = item
     for relative in data.get("locales", {}).values():
-        path = (ROOT / relative).resolve()
-        if not path.is_relative_to(ROOT) or not path.is_file():
+        path = (PROJECT / relative).resolve()
+        if not path.is_relative_to(PROJECT) or not path.is_file():
             raise ValueError("Dictionary escapes template: " + relative)
         result[relative] = path
     return result
@@ -53,7 +54,11 @@ def files(data, library):
 def build(target=None, release=False):
     target = target or host_target()
     data = manifest()
-    args = ["cargo", "build", "--locked", "--lib", "--target", target]
+    import tomllib
+    cargo = tomllib.loads((PROJECT / "Cargo.toml").read_text(encoding="utf-8"))
+    if cargo["package"]["version"] != data["version"]:
+        raise ValueError("Cargo and plugin.json versions must match")
+    args = ["cargo", "build", "--manifest-path", str(PROJECT / "Cargo.toml"), "--locked", "--lib", "--target", target]
     if release:
         args.append("--release")
     run(args)
@@ -74,10 +79,25 @@ def package(target):
         archive.writestr("package.json", json.dumps(metadata, indent=2) + "\n")
         for name, path in files(data, (target, library)).items():
             archive.write(path, name)
+    digest = hashlib.sha256(output.read_bytes()).hexdigest()
+    output.with_suffix(output.suffix + ".sha256").write_text(f"{digest}  {output.name}\n", encoding="utf-8")
     print(output)
 
 
-def initialize(plugin_id, name):
+def initialize(plugin_id, name, example):
+    if example == "minimal":
+        if manifest()["id"] not in {"github", "example"}:
+            raise ValueError("Select --example github to rename an existing custom plugin without replacing its source")
+        backup = ROOT / "target" / "init-backup" / str(time.time_ns())
+        for directory in ["src", "assets", "locales"]:
+            destination = (ROOT / directory).resolve()
+            if not destination.is_relative_to(ROOT) or destination.name != directory:
+                raise ValueError("Initialization path escaped the template")
+            shutil.copytree(destination, backup / directory)
+            shutil.rmtree(destination)
+            shutil.copytree(ROOT / "examples" / "minimal" / directory, destination)
+        shutil.copyfile(ROOT / "plugin.json", backup / "plugin.json")
+        shutil.copyfile(ROOT / "examples/minimal/plugin.json", ROOT / "plugin.json")
     if not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", plugin_id):
         raise ValueError("ID must use lowercase letters, numbers and hyphens")
     data = manifest()
@@ -85,7 +105,7 @@ def initialize(plugin_id, name):
     data["name"] = name or plugin_id
     library = "git_agent_plugin_" + plugin_id.replace("-", "_")
     data["library"] = {"windows": library + ".dll", "linux": "lib" + library + ".so", "macos": "lib" + library + ".dylib"}
-    (ROOT / "plugin.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (PROJECT / "plugin.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     cargo = (ROOT / "Cargo.toml").read_text(encoding="utf-8")
     cargo = re.sub(r'(?m)^name = "[^"]+"', 'name = "git-agent-plugin-' + plugin_id + '"', cargo, count=1)
     cargo = re.sub(r'(\[lib\]\s*\n)name = "[^"]+"', r'\1name = "' + library + '"', cargo)
@@ -167,16 +187,21 @@ if __name__ == "__main__":
     sub = parser.add_subparsers(dest="command", required=True)
     pack = sub.add_parser("package")
     pack.add_argument("--target")
+    pack.add_argument("--example", choices=["github", "minimal"], default="github")
     init = sub.add_parser("init")
     init.add_argument("id")
     init.add_argument("--name")
+    init.add_argument("--example", choices=["github", "minimal"], default="minimal")
     dev = sub.add_parser("dev")
     dev.add_argument("--host")
+    dev.add_argument("--example", choices=["github", "minimal"], default="github")
     dev.add_argument("--smoke", type=int, default=0)
     args = parser.parse_args()
+    if args.command != "init" and args.example == "minimal":
+        PROJECT = ROOT / "examples/minimal"
     if args.command == "package":
         package(args.target)
     elif args.command == "init":
-        initialize(args.id, args.name)
+        initialize(args.id, args.name, args.example)
     else:
         develop(args.host, args.smoke)

@@ -1,33 +1,18 @@
-# Git Agent 插件模板
+# Git Agent GitHub 插件与开发模板
 
-这个仓库可以独立开发、测试和打包 Git Agent 动态库插件。示例包含两个页面、中英字典、同步钩子和声明式权限；界面由宿主固定驱动绘制。SDK 0.1.0 随仓库固定，ABI 为 v1，无需把模板放进 Git Agent 源码目录。
+本仓库默认项目是基于 gh 的跨平台 GitHub 插件，业务源码、版本和插件发布在这里维护。examples/minimal 保留最小示例，vendor 固定 SDK 0.1.0、ABI v1。主程序负责驱动、钩子和安装管理，不参与插件业务编译。
 
-[English guide](README.en.md) · [SDK 接口说明](docs/sdk.md)
+[English guide](README.en.md) · [SDK 接口](docs/sdk.md) · [插件发布](docs/releasing.md)
 
-## 准备环境
+## GitHub 插件
 
-安装支持 Rust 2024 edition 的 Rust stable、Python 3.10 或更新版本。Windows 脚本使用 PowerShell 7，Rust MSVC 构建需要 C++ 构建工具。
+提供 PR 列表与文件 diff、创建及管理、AI 审核草稿、人工审核、merge/squash/rebase、议题、工作流、发布和仓库概览。权限通过插件 store 驱动入口和动作检查，写操作冻结目标后再次验证权限和 SHA。界面和字典支持中文、英文。
 
-联调需要包含 API v1 和插件管理功能的 Git Agent 构建。本模板在当前开发分支的 1.4.8 构建上验证。
+需要安装 gh 并执行 gh auth login。只在 github.com 或 GH_HOST 对应的仓库生效。远端同步开始钩子与获取、拉取、推送及后台同步并行执行。
 
-## 创建自己的插件
+## 开发与测试
 
-从模板创建新仓库，在仓库根目录执行：
-
-```powershell
-pwsh.exe -NoLogo -NoProfile -File scripts/init.ps1 -Id my-plugin -Name "我的插件"
-```
-
-脚本修改 Cargo 包名、库名、插件 ID 和平台库文件名，并更新 Cargo.lock。继续修改：
-
-- `src/lib.rs`：处理 action，返回 UI 和状态。
-- `plugin.json`：页面、菜单、驱动、能力、钩子和可选域名条件。
-- `locales/zh.json`、`locales/en.json`：显示文案。
-- `assets`：功能 SVG 图标。
-
-同一台主机上的插件 ID 应唯一。更新版本时同时修改 Cargo.toml 和 plugin.json 的 version，执行 `cargo generate-lockfile`。
-
-## 测试和联调
+使用支持 Rust edition 2024 的 Rust stable、Python 3.11 或更新版本。Windows 脚本使用 PowerShell 7，MSVC 需要 C++ 构建工具。
 
 ```powershell
 cargo test --workspace --locked
@@ -35,32 +20,41 @@ cargo fmt --all --check
 pwsh.exe -NoLogo -NoProfile -File scripts/dev.ps1 -HostExecutable D:/workspace/git-Agent/target/debug/git-agent.exe
 ```
 
-开发脚本构建并暂存到 `target/dev-plugins/<id>`，通过 GIT_AGENT_PLUGIN_DIR 启动宿主，监听代码、字典和资源。修改后只停止脚本自己启动的宿主进程，再构建和重启。Ctrl+C 同样只结束这个进程。宿主已有的托管插件仍可加载，开发目录的同 ID 插件优先；全局和仓库开关依然生效。
+默认构建 GitHub 插件，暂存到 target/dev-plugins/github。脚本只重启它自己启动的宿主；Ctrl+C 不影响其他宿主进程。一次性验收加 -SmokeTestSeconds 5。主程序仓库的 dev.ps1 也会发现同级本仓库，可通过 -ExternalPluginProjects 显式配置联调目录。
 
-不传 HostExecutable 时只构建、暂存和监听。一次性检查可以加 `-SmokeTestSeconds 5`。Linux 和 macOS 使用 `python scripts/plugin.py dev --host /path/to/git-agent`。
+最小示例使用 -Example minimal 或 Python 的 --example minimal，例如：
 
-## 打包和安装
+```powershell
+pwsh.exe -NoLogo -NoProfile -File scripts/dev.ps1 -Example minimal -HostExecutable D:/workspace/git-Agent/target/debug/git-agent.exe
+pwsh.exe -NoLogo -NoProfile -File scripts/package.ps1 -Example minimal
+```
+
+## 创建自己的插件
+
+从本模板创建新仓库，默认用最小示例起步：
+
+```powershell
+pwsh.exe -NoLogo -NoProfile -File scripts/init.ps1 -Id my-plugin -Name "我的插件" -Example minimal
+```
+
+初始化替换根项目的示例源码、字典和资源，旧内容备份到 target/init-backup。要保留 GitHub 全部功能并改名，选择 -Example github。已有自定义插件不能通过最小示例模式覆盖；GitHub 模式只调整名称与库文件名。
+
+修改 src、plugin.json、locales 和 assets 实现业务。版本更新同时修改根 Cargo.toml 和 plugin.json，再执行 cargo generate-lockfile。独立 SDK 快照和摘要位于 vendor，不依赖主程序目录。
+
+## 打包与安装
 
 ```powershell
 pwsh.exe -NoLogo -NoProfile -File scripts/package.ps1
 ```
 
-Linux 和 macOS 使用 `python scripts/plugin.py package`。输出位于 `dist/<id>-<version>-<target>.gaplugin`。指定目标可以传 `-Target` 或 `--target`，对应 Rust target 和链接工具链需要已安装。
+输出 dist/github-VERSION-TARGET.gaplugin 及同名 .sha256。Linux/macOS 使用 python scripts/plugin.py package；--target 指定已安装的 Rust 目标及链接工具链。Windows、Linux 和 macOS 两种架构由 CI 分别构建。
 
-在宿主的“选项 → 插件”中选择“安装 / 更新插件包”。新插件安装后加载；同 ID 的更高版本安排在重启后启用。全局开关控制所有仓库；“仓库设置 → 插件”允许继承或为当前仓库关闭、启用。全局关闭时，仓库级启用不会越过全局开关。可选域名条件仍独立生效。
+在包含 API v1 的宿主中，通过“选项 → 插件 → 安装 / 更新插件包”导入。插件更新重启生效。宿主全局与仓库开关及域名匹配共同生效；inputs/state/权限 store 仍按仓库在会话内保存。
 
-卸载停止新调用，已有任务协作收尾，文件在重启时清除。用户开关和仓库设置保留。开发目录插件由开发者管理源码，不能用卸载按钮删除源码。
+## 发布和预装
 
-插件包是 ZIP，根目录包含 plugin.json、package.json、本平台动态库和所需字典及资源。package.json 声明目标平台架构、API 和最低宿主版本。安装校验不执行动态库；启用加载时才验证真实 ABI 入口。动态库运行在宿主进程，宿主服务声明与 store 权限并不提供系统级沙箱。
+GitHub 插件独立打 vVERSION 标签。CI 检查 tag、Cargo 版本和 manifest 一致，发布四个平台目标的 GitHub 插件包和 SHA256 文件。最小示例也会构建作为模板回归验证，但不进入 GitHub 插件 Release。
 
-## 示例行为
+主程序用 bundled-plugins.lock.json 固定插件仓库、版本、tag 和源码提交，再从插件 Release 获取校验过的包随安装器分发。先发布插件，再发布引用它的主程序版本；二者版本号独立。当前迁移只准备发布流程，没有创建 release tag。
 
-示例默认在所有仓库生效，不声明 repository_match。打开页面可以计数，在示例设置中切换演示权限；关闭权限时按钮隐藏，派发和处理函数也检查相同权限。获取、拉取、推送及后台同步启动时，示例参与异步钩子，并更新参与次数，不调用外部服务。
-
-inputs、state 和权限 store 按插件和仓库在会话内隔离。示例的名称、计数和演示权限不跨重启保存；宿主管理的安装记录、全局开关和仓库覆盖会持久化。
-
-## SDK 和持续集成
-
-`vendor/git-agent-plugin-sdk` 是 SDK 0.1.0 的独立快照，`vendor/sdk-version.json` 记录 API 和源文件摘要。升级 SDK 时替换这个目录、更新摘要及版本约束，再完整测试；不自动跟随主项目的未固定分支。
-
-CI 在 Windows、Linux、macOS 上运行格式和工作区测试，并上传当前 runner 实际架构的插件包。不同平台的库需分别构建。SDK 与模板的许可和归属见随附 LICENSE。
+许可证和 SDK 归属见 LICENSE。动态库使用当前用户权限，宿主服务声明和 store 条件不构成系统沙箱。

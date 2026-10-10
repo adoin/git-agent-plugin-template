@@ -1,0 +1,74 @@
+{
+  "id": "example",
+  "name": "Plugin example",
+  "version": "0.1.0",
+  "api_version": 1,
+  "library": {
+    "windows": "git_agent_plugin_example.dll",
+    "linux": "libgit_agent_plugin_example.so",
+    "macos": "libgit_agent_plugin_example.dylib"
+  },
+  "drivers": [
+    "basic.v1"
+  ],
+  "capabilities": [],
+  "events": [
+    "repository.remote_sync.started"
+  ],
+  "action_permissions": {
+    "increment": "store.access.increment"
+  },
+  "locales": {
+    "zh": "locales/zh.json",
+    "en": "locales/en.json"
+  },
+  "contributes": {
+    "icons": [
+      "assets/counter.svg"
+    ],
+    "pages": [
+      {
+        "id": "home",
+        "title": {
+          "key": "home"
+        },
+        "toolbar_label": {
+          "key": "short_name"
+        },
+        "toolbar_icon": "assets/counter.svg",
+        "entry_action": "open",
+        "badge": true
+      },
+      {
+        "id": "preferences",
+        "parent": "home",
+        "title": {
+          "key": "preferences"
+        },
+        "entry_action": "open"
+      }
+    ],
+    "toolbar": {
+      "pages": [
+        "home",
+        "preferences"
+      ],
+      "inline_pages": [
+        "home"
+      ]
+    },
+    "commands": [
+      {
+        "id": "show_example",
+        "title": {
+          "key": "home"
+        },
+        "page": "home",
+        "action": "open",
+        "menus": [
+          "tools"
+        ]
+      }
+    ]
+  }
+}

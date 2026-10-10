@@ -11,6 +11,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "git-agent-plugin-github"
+version = "0.1.0"
+dependencies = [
+ "git-agent-plugin-sdk",
+ "serde_json",
+]
+
+[[package]]
 name = "git-agent-plugin-sdk"
 version = "0.1.0"
 dependencies = [

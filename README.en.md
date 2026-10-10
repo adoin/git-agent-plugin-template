@@ -1,22 +1,14 @@
-# Git Agent plugin template
+# Git Agent GitHub plugin and development template
 
-Develop, test and package a native Git Agent plugin in this independent repository. The example has two pages, Chinese and English dictionaries, an asynchronous sync hook and store-based permissions. The host renders the UI. SDK 0.1.0 and ABI v1 are pinned in vendor; the host source checkout is not a build dependency.
+The default project is the cross-platform gh-based GitHub plugin. Its source, version and releases live here. examples/minimal is a minimal starter; vendor pins SDK 0.1.0 and ABI v1. The host owns rendering, hooks and installation and no longer compiles GitHub business code.
 
-[中文指南](README.md) · [SDK reference](docs/sdk.en.md)
+[中文](README.md) · [SDK reference](docs/sdk.en.md) · [Release guide](docs/releasing.md)
 
-## Requirements
+The plugin supports PR lists and file diffs, creation/management, AI review drafts, reviews, merge/squash/rebase, issues, workflows, releases and repository information. It uses store-based permissions with fresh write checks and SHA pinning. Install gh and authenticate with gh auth login. Remote-domain matching supports github.com and GH_HOST. Sync hooks run alongside host remote operations.
 
-Use Rust stable with edition 2024 support and Python 3.10 or later. Windows wrappers use PowerShell 7; MSVC builds require C++ build tools. Use a Git Agent build containing API v1 and plugin management. This template was verified against the current 1.4.8 development build.
+## Develop
 
-## Initialize
-
-```powershell
-pwsh.exe -NoLogo -NoProfile -File scripts/init.ps1 -Id my-plugin -Name "My plugin"
-```
-
-The script changes the Cargo package, library names, manifest identity and lockfile. Implement actions in src/lib.rs; declare contributions in plugin.json; edit locales and assets. IDs must be unique. When updating, change version in Cargo.toml and plugin.json together and run cargo generate-lockfile.
-
-## Test and develop
+Use Rust stable with edition 2024, Python 3.11+, and PowerShell 7 for Windows wrappers. MSVC requires C++ build tools.
 
 ```powershell
 cargo test --workspace --locked
@@ -24,28 +16,22 @@ cargo fmt --all --check
 pwsh.exe -NoLogo -NoProfile -File scripts/dev.ps1 -HostExecutable D:/workspace/git-Agent/target/debug/git-agent.exe
 ```
 
-The script builds, stages into target/dev-plugins and launches the host with GIT_AGENT_PLUGIN_DIR. It watches source and resources, stopping only its own host process before rebuilding. Ctrl+C stops that process too. Without HostExecutable it only builds, stages and watches. Add -SmokeTestSeconds 5 for a bounded smoke test. On Linux/macOS use python scripts/plugin.py dev --host /path/to/git-agent.
+The default is GitHub. Select -Example minimal or --example minimal to develop/package the starter. The script restarts only its own host process. Host-side dev.ps1 discovers this sibling repository or accepts -ExternalPluginProjects.
 
-Managed plugins still load; a development plugin takes precedence over an installed plugin with the same ID. Global and repository switches remain effective.
-
-## Package and install
+## Start another plugin
 
 ```powershell
-pwsh.exe -NoLogo -NoProfile -File scripts/package.ps1
+pwsh.exe -NoLogo -NoProfile -File scripts/init.ps1 -Id my-plugin -Name "My plugin" -Example minimal
 ```
 
-On Linux/macOS use python scripts/plugin.py package. Packages appear at dist/ID-VERSION-TARGET.gaplugin. Pass -Target or --target for another installed Rust target and linker.
+Minimal mode replaces root source/resources and preserves originals in target/init-backup. Select -Example github to retain GitHub functionality while renaming it. Minimal mode refuses to overwrite an already-customized plugin identity. Edit src, plugin.json, locales and assets. Keep Cargo and manifest versions identical and update Cargo.lock.
 
-Import the package in Options → Plugins → Install / update package. New plugins load after installation; newer versions of an installed plugin take effect after restart. Global switches control all repositories. Repository Settings → Plugins supports inheritance and repository overrides; an override never bypasses a global disable or domain mismatch.
+## Package and release
 
-Uninstall stops new calls and lets current tasks finish cooperatively; files are removed on restart. Host preferences remain. Development source directories are maintained by the developer and are not removed by managed uninstall.
+Run scripts/package.ps1 or python scripts/plugin.py package. dist contains github-VERSION-TARGET.gaplugin and SHA256 sidecars. CI builds Windows/Linux x86_64 and macOS ARM64/x86_64. The minimal example is also built as a regression fixture.
 
-A package is ZIP with plugin.json, package.json, the target native library, dictionaries and assets at its root. Installation checks API, target, version, resources and paths without loading native code. Enabling checks the actual ABI entry. Native plugins run inside the host process; host-service declarations and store permissions are not a system sandbox.
+Tag vVERSION to release the default GitHub plugin after tests and matching version checks. The release publishes only GitHub packages. Import packages in Options → Plugins; updates activate after restart.
 
-## Example and SDK
+The host pins repository/tag/version/commit in bundled-plugins.lock.json and stages verified release packages into installers. Release the plugin before the host version that pins it; their versions are independent. This migration does not create a release tag.
 
-The example matches all repositories because it omits repository_match. Its counter button is guarded by store.access.increment at UI and dispatch level, with a final handler check. Preferences simulate permission updates. The remote-sync-started hook updates a participation count without contacting external services.
-
-Inputs, state and permission store are isolated per plugin and repository within the app session. Example names, counters and access flags are not durable; installation records and global/repository switches are durable.
-
-The vendored SDK snapshot is tracked in vendor/sdk-version.json. Upgrade it deliberately, update the checksum and dependency version, then retest. CI checks formatting and tests and uploads packages for the actual Windows/Linux/macOS runner target. Licensing and attribution are in LICENSE.
+ABI v1, driver, permission and packaging details are in docs/sdk.en.md. Native plugins have user-level permissions; host-service/store rules are not a native sandbox. Licensing is in LICENSE.
