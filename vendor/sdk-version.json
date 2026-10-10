@@ -1,0 +1,7 @@
+{
+  "package": "git-agent-plugin-sdk",
+  "version": "0.1.0",
+  "api_version": 1,
+  "source": "adoin/git-Agent/crates/plugin-sdk",
+  "lib_sha256": "d1356d8ea1693f0912c38042dc066925527e4462fa772c845258328ad102289c"
+}

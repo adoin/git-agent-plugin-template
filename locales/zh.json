@@ -1,0 +1,18 @@
+{
+  "home": "插件示例",
+  "short_name": "示例",
+  "preferences": "示例设置",
+  "back": "返回示例",
+  "counter": "计数",
+  "name": "显示名称",
+  "access": "演示权限",
+  "allowed": "允许操作",
+  "readonly": "仅查看",
+  "save": "保存",
+  "session_hint": "示例表单与权限 store 在当前应用会话内保存。宿主插件开关会跨重启保存。",
+  "greeting": "你好，",
+  "sync_count": "参与同步次数",
+  "increment": "计数加一",
+  "access_hint": "在设置中切换演示权限，可以观察按钮显示与执行权限一起变化。",
+  "saved": "示例设置已保存。"
+}
