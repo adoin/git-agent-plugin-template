@@ -36,13 +36,15 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: python scripts/check-release.py "${{ github.ref_name }}"
       - run: python scripts/plugin.py package --target ${{ matrix.target }}
+      - name: Keep root plugin release assets separate from the fixture
+        run: python scripts/release_plugin.py stage
       - run: python scripts/plugin.py package --example minimal --target ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
           name: plugin-${{ matrix.target }}
           path: |
-            dist/*.gaplugin
-            dist/*.sha256
+            dist/**/*.gaplugin
+            dist/**/*.sha256
           if-no-files-found: error
   release:
     if: startsWith(github.ref, 'refs/tags/')
@@ -56,11 +58,8 @@ jobs:
         with:
           path: release-assets
           merge-multiple: true
-      - name: Publish GitHub plugin release
+      - name: Publish configured plugin release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          gh release create "$RELEASE_TAG" release-assets/github-*.gaplugin release-assets/github-*.sha256 \
-            --verify-tag --title "GitHub plugin $RELEASE_TAG" \
-            --notes-file docs/release-notes.md
+        run: python scripts/release_plugin.py publish "${{ github.ref_name }}"

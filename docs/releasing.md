@@ -1,6 +1,6 @@
-# GitHub 插件独立发布
+# 插件独立发布
 
-GitHub 业务只在本仓库维护，主程序仅引用发布包。插件包的版本与主程序版本独立。
+默认 GitHub 插件和通过最小示例初始化的自定义插件使用同一发布流程。CI 从 plugin.json 读取插件 ID 与名称，主程序仅引用发布包，版本号独立。
 
 ## 版本和验证
 
@@ -16,10 +16,10 @@ GitHub 业务只在本仓库维护，主程序仅引用发布包。插件包的�
 
 首次启动由通用安装管理导入随包插件。已有更高版本不降级；用户关闭的开关保留；已经卸载的随包插件不会在以后启动时重新安装。新版随包插件只在启动阶段安排更新，读取原生库前完成切换。
 
-发布顺序是插件 Release 成功后，再提交主程序的版本锁定及版本升级，最后发布主程序。迁移阶段只配置流程，不提前打 tag。
+发布顺序是插件 Release 成功后，再提交主程序的版本锁定及版本升级，最后发布主程序。社区列表收录只需要向主仓库 README.md 提交名称与仓库地址，不自动修改主程序的内置名单。
 
 ## English summary
 
-Keep the default GitHub Cargo/manifest versions identical and test the complete workspace. Push an immutable vVERSION tag after updating release notes. CI publishes GitHub packages and SHA256 sidecars for Windows/Linux x86_64 and both macOS architectures; branch builds publish Actions artifacts only.
+Keep the root plugin Cargo/manifest versions identical and test the complete workspace. Push an immutable vVERSION tag after updating release notes. CI reads the configured ID/name and publishes that plugin's packages and SHA256 sidecars for Windows/Linux x86_64 and both macOS architectures; branch builds publish Actions artifacts only. Prerelease version suffixes automatically mark the Release as a prerelease.
 
 The host pins tag/version/revision, verifies the commit and package checksum, and bundles the selected assets. Publish the plugin first, then the host version that pins it. User-disabled/uninstalled plugins stay disabled/uninstalled, and newer user-installed versions are preserved.

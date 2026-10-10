@@ -53,8 +53,12 @@ pwsh.exe -NoLogo -NoProfile -File scripts/package.ps1
 
 ## 发布和预装
 
-GitHub 插件独立打 vVERSION 标签。CI 检查 tag、Cargo 版本和 manifest 一致，发布四个平台目标的 GitHub 插件包和 SHA256 文件。最小示例也会构建作为模板回归验证，但不进入 GitHub 插件 Release。
+插件独立打 vVERSION 标签。CI 从 plugin.json 读取插件 ID 和名称，检查 tag、Cargo 版本和 manifest 一致，发布四个平台目标的根插件包和 SHA256 文件。初始化为自己的插件后也使用同一流程。最小示例在独立目录构建作为模板回归验证，不混入插件 Release。带 alpha、beta、rc 等后缀的版本自动标记为预发布。
 
-主程序用 bundled-plugins.lock.json 固定插件仓库、版本、tag 和源码提交，再从插件 Release 获取校验过的包随安装器分发。先发布插件，再发布引用它的主程序版本；二者版本号独立。当前迁移只准备发布流程，没有创建 release tag。
+主程序用 bundled-plugins.lock.json 固定插件仓库、版本、tag 和源码提交，再从插件 Release 获取校验过的包随安装器分发。先发布插件，再发布引用它的主程序版本；二者版本号独立。GitHub 插件 0.1.0 已发布，并随 Git Agent 2.0.0-beta.3 安装包分发。
+
+## 分享自己的插件
+
+在自己的仓库发布插件包并写好安装说明后，向 git-Agent 主仓库的 main 分支提交 PR，只在 README.md 的 Plugin list 表格添加插件名称与仓库地址，例如 `| 我的插件 | https://github.com/you/my-plugin |`。不需要提交源码、二进制或编辑官网。维护者合并后生成并部署中文 README 和官网名单。收录不代表自动预装。完整说明见 [插件列表与分享指南](https://github.com/adoin/git-Agent#plugins)。
 
 许可证和 SDK 归属见 LICENSE。动态库使用当前用户权限，宿主服务声明和 store 条件不构成系统沙箱。

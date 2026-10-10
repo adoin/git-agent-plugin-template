@@ -28,10 +28,14 @@ Minimal mode replaces root source/resources and preserves originals in target/in
 
 ## Package and release
 
-Run scripts/package.ps1 or python scripts/plugin.py package. dist contains github-VERSION-TARGET.gaplugin and SHA256 sidecars. CI builds Windows/Linux x86_64 and macOS ARM64/x86_64. The minimal example is also built as a regression fixture.
+Run scripts/package.ps1 or python scripts/plugin.py package. dist contains ID-VERSION-TARGET.gaplugin and SHA256 sidecars. CI builds Windows/Linux x86_64 and macOS ARM64/x86_64. The minimal example is also built separately as a regression fixture.
 
-Tag vVERSION to release the default GitHub plugin after tests and matching version checks. The release publishes only GitHub packages. Import packages in Options → Plugins; updates activate after restart.
+Tag vVERSION after tests and matching version checks. CI reads the ID and name from plugin.json and publishes only the root plugin's packages, including after initializing your own plugin. Versions with prerelease suffixes such as alpha, beta or rc are marked as prereleases. Import packages in Options → Plugins; updates activate after restart.
 
-The host pins repository/tag/version/commit in bundled-plugins.lock.json and stages verified release packages into installers. Release the plugin before the host version that pins it; their versions are independent. This migration does not create a release tag.
+The host pins repository/tag/version/commit in bundled-plugins.lock.json and stages verified release packages into installers. Release the plugin before the host version that pins it; their versions are independent. GitHub plugin 0.1.0 is published and bundled with Git Agent 2.0.0-beta.3.
+
+## Share your plugin
+
+Publish packages and installation instructions in your own repository, then open a PR against git-Agent's main branch adding a name and repository URL to the Plugin list table in README.md: `| My plugin | https://github.com/you/my-plugin |`. No plugin source, binaries or website edits are needed. The maintainer generates and deploys the Chinese README and website lists after merging. Listing does not automatically bundle a plugin. See the [plugin catalog and sharing guide](https://github.com/adoin/git-Agent#plugins).
 
 ABI v1, driver, permission and packaging details are in docs/sdk.en.md. Native plugins have user-level permissions; host-service/store rules are not a native sandbox. Licensing is in LICENSE.
